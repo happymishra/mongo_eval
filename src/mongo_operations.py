@@ -1,8 +1,7 @@
-import time
 import subprocess
+import time
 
 from sql_alchemy_operations import *
-from pymongo.database import Database
 
 
 class MongoDBOperations:
@@ -12,14 +11,16 @@ class MongoDBOperations:
         self.file_path = "/home/rupesh/VA/mongo_dumps"
 
     def dump_mongo_data(self, db, collection_name=None):
+        db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
+
         dump_cmd = [
-            "mongodump", "--host", SOURCE_HOST, "--port", SOURCE_PORT, "--db", db,
+            "mongodump", "--host", SOURCE_HOST, "--port", SOURCE_PORT, "--db", db_name,
             "--out", self.file_path
         ]
 
-        if collection_name:
-            collection_name = db + collection_name
-            dump_cmd = dump_cmd + ["--collection", collection_name]
+        # if collection_name:
+        #     collection_name = db + collection_name
+        #     dump_cmd = dump_cmd + ["--collection", collection_name]
 
         try:
             dump = subprocess.Popen(dump_cmd)
@@ -28,16 +29,18 @@ class MongoDBOperations:
         except Exception as ex:
             print "Dump failed"
 
-    def restore_mongo_data(self, db, new_db_name, collection_name=None):
-        file_path = self.file_path + "/" + db + "/"
+    def restore_mongo_data(self, collection_name=None):
+        db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
+        file_path = self.file_path + "/" + db_name + "/"
 
         restore_cmd = [
-            "mongorestore", "--host", DESTINATION_HOST, "--port", DESTINATION_PORT, "--db", new_db_name
+            "mongorestore", "--host", DESTINATION_HOST, "--port", DESTINATION_PORT, "--db", db_name
         ]
 
-        if collection_name:
-            file_path = file_path + db + "_" + collection_name + ".bson"
-            restore_cmd = restore_cmd + ["--collection", collection_name]
+        #
+        # if collection_name:
+        #     file_path = file_path + db_name + "_" + collection_name + ".bson"
+        #     restore_cmd = restore_cmd + ["--collection", collection_name]
 
         restore_cmd = restore_cmd + [file_path]
 
@@ -48,22 +51,39 @@ class MongoDBOperations:
         except Exception as ex:
             print "Restore failed"
 
-    def rename_collections(self, db):
-        old_collection = self.get_collection(db, mongo_client=source_mongo_client)
-        new_collection = self.get_collection("apsli_" + db)
+    def copy_temp_data_to_main_db(self):
+        temp_db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
+        col_name = '{db_name}.{col_name}'
+        renamed_dbs = list()
 
         try:
-            old_collection.rename(db + "_temp")
-            new_collection.rename(db)
+            for each_table, query in QUERY_DB_DICT.iteritems():
+                renamed_dbs.append(each_table)
 
-            old_collection.drop()
+                main_db_col_name = col_name.format(db_name=each_table, col_name=self.company_id)
+                tem_db_col = col_name.format(db_name=temp_db_name, col_name=each_table)
+                temp_main_col = '{company_id}_temp'.format(company_id=self.company_id)
 
-        except:
-            old_collection.rename(db)
-            print "Rename failed"
+                main_db_col = self.get_collection(each_table, destination_mongo_client)
+                main_db_col.rename(temp_main_col)
 
-    def create_temp_db(self, db):
-        db_name = 'apsli_{company_id}'.format(self.company_id)
+                destination_mongo_client.admin.command('renameCollection', **{
+                    'renameCollection': tem_db_col,
+                    'to': main_db_col_name
+                })
+        except Exception as ex:
+            print "Renaming failed"
+            temp_main_col = '{company_id}_temp'.format(company_id=self.company_id)
+
+            for each_renamed_table in renamed_dbs:
+
+                main_db_col = destination_mongo_client[each_renamed_table][temp_main_col]
+                main_db_col.rename(str(self.company_id))
+
+            pass
+
+    def create_temp_db(self):
+        db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
         col_name = '{db_name}.{col_name}'
 
         source_mongo_client[db_name]
@@ -77,64 +97,11 @@ class MongoDBOperations:
                 'to': renamed_collection
             })
 
-    # def dump_mongo_db(self):
-    #     dump_cmd = [
-    #         "mongodump", "--host", "127.0.0.1", "--port", "27017", "--db", "13311",
-    #         "--out", "/home/rupesh/VA/mongo_dumps"
-    #     ]
-    #
-    #     try:
-    #         dump = subprocess.Popen(dump_cmd)
-    #         dump.wait()
-    #
-    #     except Exception as ex:
-    #         print "Dump failed"
-    #
-    # def restore_mongo_db(self):
-    #     restore_cmd = [
-    #         "mongorestore", "--host", "127.0.0.1", "--port", "27020", "--db", "13311"
-    #         , "/home/rupesh/VA/mongo_dumps/13311/"
-    #     ]
-    #
-    #     try:
-    #         restore_result = subprocess.Popen(restore_cmd)
-    #         restore_result.wait()
-    #     except Exception as ex:
-    #         print "Restore failed"
-    #
-    # def dump_mongo_collection(self):
-    #     dump_cmd = [
-    #         "mongodump", "--host", "127.0.0.1", "--port", "27017", "--db", "13311", "--collection", "13311_slirevision"
-    #         ,"--out", "/home/rupesh/VA/mongo_dumps"
-    #     ]
-    #
-    #     try:
-    #         dump = subprocess.Popen(dump_cmd)
-    #         dump.wait()
-    #
-    #     except Exception as ex:
-    #         print "Dump failed"
-    #
-    # def restore_mongo_collections(self):
-    #     restore_cmd = [
-    #         "mongorestore", "--host", "127.0.0.1", "--port", "27020", "--db", "13311"
-    #         , "/home/rupesh/VA/mongo_dumps/13311/13311_slirevision.bson" , "--collection" ,"rest4"
-    #     ]
-    #
-    #     try:
-    #         restore_result = subprocess.Popen(restore_cmd)
-    #         restore_result.wait()
-    #     except Exception as ex:
-    #         print "Restore failed"
-
     def get_temp_collection(self, db, table, mongo_client=destination_mongo_client):
         print "Started creating collection {c_name}".format(c_name=table)
 
         db = mongo_client[db]
-        collection_name = '{table}'.format(company_id=self.company_id, table=table)
-
-        collection = db[collection_name]
-        collection.create_index([("revisiondpid", pymongo.ASCENDING)])
+        collection = db[table]
 
         print "Completed creating collection {c_name}".format(c_name=table)
 
@@ -152,13 +119,13 @@ class MongoDBOperations:
 
         return collection
 
-    def insert_data_into_mongo(self):
+    def insert_data_into_mongo(self, mongo_client):
         for db, query in QUERY_DB_DICT.iteritems():
             print "Started inserting {db} data for company {company_id}".format(db=db, company_id=self.company_id)
 
             data = self.sql_alchemy_obj.get_data_from_raw_query(db)
-            collection = self.get_collection(db, source_mongo_client)
-            # collection = self.get_temp_collection(db, source_mongo_client)
+            collection = self.get_collection(db, mongo_client)
+            # collection = self.get_temp_collection(db, mongo_client)
 
             start = time.time()
             while True:
@@ -178,10 +145,10 @@ class MongoDBOperations:
 
 if __name__ == '__main__':
     obj = MongoDBOperations(13311)
-    # obj.insert_data_into_mongo()
-    obj.create_temp_db('apsli')
-    # obj.dump_mongo_db()
-    # obj.restore_mongo_db()
+    # obj.insert_data_into_mongo(source_mongo_client)
+    # obj.insert_data_into_mongo(destination_mongo_client)
+    # obj.create_temp_db()
     # obj.dump_mongo_data('13311')
-    # obj.restore_mongo_data("13311", 'apsli_13311')
+    # obj.restore_mongo_data()
+    obj.copy_temp_data_to_main_db()
     # obj.rename_collections("13311")
