@@ -3,24 +3,21 @@ import time
 
 from sql_alchemy_operations import *
 
-
 class MongoDBOperations:
     def __init__(self, company_id):
         self.company_id = company_id
         self.sql_alchemy_obj = SQlAlchemyOperations(company_id)
         self.file_path = "/home/rupesh/VA/mongo_dumps"
+        self.temp_db_name = "apsli_{company_id}".format(company_id=self.company_id)
+        self.archive_cmd = "--archive=/home/rupesh/VA/mongo_dumps/{name}.archive".format(name=self.temp_db_name)
 
-    def dump_mongo_data(self, db, collection_name=None):
+    def dump_mongo_data(self, collection_name=None):
         db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
 
         dump_cmd = [
-            "mongodump", "--host", SOURCE_HOST, "--port", SOURCE_PORT, "--db", db_name,
-            "--out", self.file_path
+            "mongodump", "--host", SOURCE_HOST, "--port", SOURCE_PORT, "--db", db_name, "--gzip",
+            self.archive_cmd
         ]
-
-        # if collection_name:
-        #     collection_name = db + collection_name
-        #     dump_cmd = dump_cmd + ["--collection", collection_name]
 
         try:
             dump = subprocess.Popen(dump_cmd)
@@ -34,15 +31,11 @@ class MongoDBOperations:
         file_path = self.file_path + "/" + db_name + "/"
 
         restore_cmd = [
-            "mongorestore", "--host", DESTINATION_HOST, "--port", DESTINATION_PORT, "--db", db_name
+            "mongorestore", "--host", DESTINATION_HOST, "--port", DESTINATION_PORT, "--gzip",
+            self.archive_cmd
         ]
 
-        #
-        # if collection_name:
-        #     file_path = file_path + db_name + "_" + collection_name + ".bson"
-        #     restore_cmd = restore_cmd + ["--collection", collection_name]
-
-        restore_cmd = restore_cmd + [file_path]
+        restore_cmd = restore_cmd
 
         try:
             restore_result = subprocess.Popen(restore_cmd)
