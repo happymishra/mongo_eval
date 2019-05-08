@@ -1,147 +1,146 @@
 import subprocess
-import time
 
-from sql_alchemy_operations import *
+from constants import ARCHIVE_CMD
 
-class MongoDBOperations:
-    def __init__(self, company_id):
-        self.company_id = company_id
-        self.sql_alchemy_obj = SQlAlchemyOperations(company_id)
-        self.file_path = "/home/rupesh/VA/mongo_dumps"
-        self.temp_db_name = "apsli_{company_id}".format(company_id=self.company_id)
-        self.archive_cmd = "--archive=/home/rupesh/VA/mongo_dumps/{name}.archive".format(name=self.temp_db_name)
 
-    def dump_mongo_data(self, collection_name=None):
-        db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
+class MongoOperations(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def execute_subprocess_cmd(cmd):
+        try:
+            result = subprocess.Popen(cmd)
+            result.wait()
+
+        except Exception as ex:
+            print "An error occurred in executing cmd command ==> {cmd}".format(cmd=cmd)
+            raise Exception(ex)
+
+    @staticmethod
+    def create_dump(server, dump_path):
+        dump_cmd = [
+            "mongodump", "--host", server["host"], "--port", server["port"],
+            "--db", server["db"], "--out", dump_path
+        ]
+
+        MongoOperations.execute_subprocess_cmd(dump_cmd)
+
+    @staticmethod
+    def create_compressed_dump(server, dump_path):
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
 
         dump_cmd = [
-            "mongodump", "--host", SOURCE_HOST, "--port", SOURCE_PORT, "--db", db_name, "--gzip",
-            self.archive_cmd
+            "mongodump", "--host", server["host"], "--port", server["port"],
+            "--db", server["db"], "--gzip", archive_cmd
         ]
 
-        try:
-            dump = subprocess.Popen(dump_cmd)
-            dump.wait()
+        MongoOperations.execute_subprocess_cmd(dump_cmd)
 
-        except Exception as ex:
-            print "Dump failed"
+    @staticmethod
+    def create_collection_dump(server, dump_path, collection):
+        dump_cmd = [
+            "mongodump", "--host", server["host"], "--port", server["port"],
+            "--db", server["db"], "--collection", collection,
+            "--out", dump_path
+        ]
 
-    def restore_mongo_data(self, collection_name=None):
-        db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
-        file_path = self.file_path + "/" + db_name + "/"
+        MongoOperations.execute_subprocess_cmd(dump_cmd)
+
+    @staticmethod
+    def create_compress_collection_dump(server, dump_path, collection):
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
+
+        dump_cmd = [
+            "mongodump", "--host", server["host"], "--port", server["port"],
+            "--db", server["db"], "--collection", collection,
+            "--gzip", archive_cmd
+        ]
+
+        MongoOperations.execute_subprocess_cmd(dump_cmd)
+
+    @staticmethod
+    def restore_dump(server, dump_path):
+        restore_cmd = [
+            "mongorestore", "--host", server["host"], "--port", server["port"],
+            "--db", server["db"], dump_path
+        ]
+
+        MongoOperations.execute_subprocess_cmd(restore_cmd)
+
+    @staticmethod
+    def restore_compressed_dump(server, dump_path):
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
 
         restore_cmd = [
-            "mongorestore", "--host", DESTINATION_HOST, "--port", DESTINATION_PORT, "--gzip",
-            self.archive_cmd
+            "mongorestore", "--host", server["host"], "--port", server["port"],
+            "--gzip", archive_cmd
         ]
 
-        restore_cmd = restore_cmd
+        MongoOperations.execute_subprocess_cmd(restore_cmd)
 
+    @staticmethod
+    def restore_collection_dump(server, dump_path, collection):
+        restore_cmd = [
+            "mongorestore", "--host", server["host"], "--port", server["port"],
+            "--db", server["db"], "--collection", collection,
+            dump_path
+        ]
+
+        MongoOperations.execute_subprocess_cmd(restore_cmd)
+
+    @staticmethod
+    def restore_compressed_collection_dump(server, dump_path, collection):
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
+
+        restore_cmd = [
+            "mongorestore", "--host", server["host"], "--port", server["port"],
+            "--db", server["db"], "--collection", collection,
+            "--gzip", archive_cmd
+        ]
+
+        MongoOperations.execute_subprocess_cmd(restore_cmd)
+
+    @staticmethod
+    def clone_db(client, from_db, to_db):
         try:
-            restore_result = subprocess.Popen(restore_cmd)
-            restore_result.wait()
-
-        except Exception as ex:
-            print "Restore failed"
-
-    def copy_temp_data_to_main_db(self):
-        temp_db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
-        col_name = '{db_name}.{col_name}'
-        renamed_dbs = list()
-
-        try:
-            for each_table, query in QUERY_DB_DICT.iteritems():
-                renamed_dbs.append(each_table)
-
-                main_db_col_name = col_name.format(db_name=each_table, col_name=self.company_id)
-                tem_db_col = col_name.format(db_name=temp_db_name, col_name=each_table)
-                temp_main_col = '{company_id}_temp'.format(company_id=self.company_id)
-
-                main_db_col = self.get_collection(each_table, destination_mongo_client)
-                main_db_col.rename(temp_main_col)
-
-                destination_mongo_client.admin.command('renameCollection', **{
-                    'renameCollection': tem_db_col,
-                    'to': main_db_col_name
-                })
-        except Exception as ex:
-            print "Renaming failed"
-            temp_main_col = '{company_id}_temp'.format(company_id=self.company_id)
-
-            for each_renamed_table in renamed_dbs:
-
-                main_db_col = destination_mongo_client[each_renamed_table][temp_main_col]
-                main_db_col.rename(str(self.company_id))
-
-            pass
-
-    def create_temp_db(self):
-        db_name = 'apsli_{company_id}'.format(company_id=self.company_id)
-        col_name = '{db_name}.{col_name}'
-
-        source_mongo_client[db_name]
-
-        for each_table, query in QUERY_DB_DICT.iteritems():
-            col_1 = col_name.format(db_name=each_table, col_name=self.company_id)
-            renamed_collection = col_name.format(db_name=db_name, col_name=each_table)
-
-            source_mongo_client.admin.command('renameCollection', **{
-                'renameCollection': col_1,
-                'to': renamed_collection
+            client.admin.command('renameCollection', **{
+                'renameCollection': from_db,
+                'to': to_db
             })
+        except Exception as ex:
+            print "Error while cloning DB"
+            raise Exception(ex)
 
-    def get_temp_collection(self, db, table, mongo_client=destination_mongo_client):
-        print "Started creating collection {c_name}".format(c_name=table)
+    @staticmethod
+    def get_collection(db, collection, client):
+        try:
+            db = client[db]
+            collection = db[collection]
 
-        db = mongo_client[db]
-        collection = db[table]
+            return collection
+        except Exception as ex:
+            print "Error while creating collection"
+            raise Exception(ex)
 
-        print "Completed creating collection {c_name}".format(c_name=table)
+    @staticmethod
+    def insert(client, db, collection, data):
+        try:
+            collection_obj = MongoOperations.get_collection(db, collection, client)
 
-        return collection
-
-    def get_collection(self, db, mongo_client=destination_mongo_client):
-        print "Started creating temp collection {c_name}".format(c_name=table)
-
-        db = mongo_client[db]
-        collection_name = '{company_id}'.format(company_id=self.company_id)
-
-        collection = db[collection_name]
-
-        print "Completed creating db {db_name} and collection {col}".format(db_name=db, col=collection_name)
-
-        return collection
-
-    def insert_data_into_mongo(self, mongo_client):
-        for db, query in QUERY_DB_DICT.iteritems():
-            print "Started inserting {db} data for company {company_id}".format(db=db, company_id=self.company_id)
-
-            data = self.sql_alchemy_obj.get_data_from_raw_query(db)
-            collection = self.get_collection(db, mongo_client)
-            # collection = self.get_temp_collection(db, mongo_client)
-
-            start = time.time()
             while True:
                 data_chunk = data.fetchmany(1000)
 
                 if not data_chunk:
-                    print "Break"
                     break
 
                 result = [dict(row) for row in data_chunk]
-                collection.insert_many(result)
+                collection_obj.insert_many(result)
 
-            print "Completed inserting {db} data for company {company_id}".format(db=db, company_id=self.company_id)
-
-            print PRINT_FORMAT.format(message="Mongo insertion", time=time.time() - start)
+        except Exception as ex:
+            print "An error occurred while inserting data to MongoDB"
+            raise Exception(ex)
 
 
 if __name__ == '__main__':
-    obj = MongoDBOperations(13311)
-    # obj.insert_data_into_mongo(source_mongo_client)
-    # obj.insert_data_into_mongo(destination_mongo_client)
-    # obj.create_temp_db()
-    # obj.dump_mongo_data('13311')
-    # obj.restore_mongo_data()
-    obj.copy_temp_data_to_main_db()
-    # obj.rename_collections("13311")
+    MongoOperations.create_dump()

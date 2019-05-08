@@ -16,7 +16,6 @@ SLI_CON_LATEST_DB = 'sli_consensus_latest'
 SLI_LATEST_DB = 'sli_latest'
 SLI_VAACTUALS_LATEST = 'sli_vaactuals_latest'
 
-
 SLI_DB = 'sli'
 
 MYSQL_DB_URL = "mysql://{0}:{1}@{2}/{3}"
@@ -36,10 +35,15 @@ QUERY_DB_DICT = {
     'slivaactualsrevision': "SELECT revisiondpid, expression, computeinfojson FROM {db}.`{company_id}`",
 }
 
-DUMP_FILE_PATH = "/home/rupesh/VA/mongo_dumps"
+DUMP_PATH = "../dumps"
+DUMP_PATH_FOR_RESTORE = "../dumps/{db}"
+DUMP_PATH_COLLECTION_FOR_RESTORE = "../dumps/{db}/{collection}.bson"
 
-DESTINATION_HOST = '127.0.0.1'
-DESTINATION_PORT = '27020'
+ARCHIVE_DUMP_PATH = "../archive_dumps"
+ARCHIVE_CMD = "--archive={path}/{name}.archive"
 
 SOURCE_HOST = '127.0.0.1'
 SOURCE_PORT = '27017'
+
+DESTINATION_HOST = '127.0.0.1'
+DESTINATION_PORT = '27020'

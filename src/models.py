@@ -22,13 +22,13 @@ def get_local_mysql_engine():
     return create_engine(conn_string, pool_pre_ping=True)
 
 
-def get_source_mongo_client():
+def get_source_client():
     conn_string = MONGO_DB_URL.format("localhost", "27017")
 
     return pymongo.MongoClient(conn_string)
 
 
-def get_destination_mongo_client():
+def get_destination_client():
     conn_string = MONGO_DB_URL.format("localhost", "27020")
     return pymongo.MongoClient(conn_string)
 
@@ -52,8 +52,8 @@ def get_session(engine):
 #
 # sli_con_rev_mysql_session = get_session(sli_con_rev_mysql_engine)
 
-source_mongo_client = get_source_mongo_client()
-destination_mongo_client = get_destination_mongo_client()
+source_client = get_source_client()
+destination_client = get_destination_client()
 
 #
 # local_sli_con_revision = get_local_mysql_engine()
