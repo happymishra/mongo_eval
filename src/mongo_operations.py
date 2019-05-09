@@ -28,7 +28,7 @@ class MongoOperations(object):
 
     @staticmethod
     def create_compressed_dump(server, dump_path):
-        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         dump_cmd = [
             "mongodump", "--host", server["host"], "--port", server["port"],
@@ -49,7 +49,7 @@ class MongoOperations(object):
 
     @staticmethod
     def create_compress_collection_dump(server, dump_path, collection):
-        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         dump_cmd = [
             "mongodump", "--host", server["host"], "--port", server["port"],
@@ -70,11 +70,11 @@ class MongoOperations(object):
 
     @staticmethod
     def restore_compressed_dump(server, dump_path):
-        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         restore_cmd = [
             "mongorestore", "--host", server["host"], "--port", server["port"],
-            "--gzip", archive_cmd
+            "--nsFrom", server["db"] + ".*", "--nsTo", server["temp_db"] + ".*", "--gzip", archive_cmd
         ]
 
         MongoOperations.execute_subprocess_cmd(restore_cmd)
@@ -91,11 +91,24 @@ class MongoOperations(object):
 
     @staticmethod
     def restore_compressed_collection_dump(server, dump_path, collection):
-        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["db"])
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
+
+        restore_cmd = [
+            "mongorestore", "--host", server["host"], "--port", server["port"],  # "--drop", # to drop existing db
+            "--db", server["db"], "--collection", collection,
+            "--gzip", archive_cmd
+        ]
+
+        MongoOperations.execute_subprocess_cmd(restore_cmd)
+
+    @staticmethod
+    def restore_to_diff_db(server, dump_path):
+        archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         restore_cmd = [
             "mongorestore", "--host", server["host"], "--port", server["port"],
-            "--db", server["db"], "--collection", collection,
+            "--nsFrom", server["db"] + ".*", "--nsTo", server["temp_db"] + ".*",
+            "--nsInclude", server["db"] + ".slirev*",  # "nsExclude", server["db"] + ".sli*" # Don't restore these coll
             "--gzip", archive_cmd
         ]
 

@@ -1,7 +1,8 @@
 from constants import (DESTINATION_HOST, DESTINATION_PORT, DUMP_PATH_FOR_RESTORE, ARCHIVE_DUMP_PATH,
-                       DUMP_PATH_COLLECTION_FOR_RESTORE)
+                       DUMP_PATH_COLLECTION_FOR_RESTORE, TEMP_DB_FMT, QUERY_DB_DICT_DEST)
 from models import destination_client
 from mongo_operations import MongoOperations
+from sql_alchemy_operations import SQlAlchemyOperations
 
 
 class Destination(MongoOperations):
@@ -13,7 +14,8 @@ class Destination(MongoOperations):
         self.server = {
             "host": DESTINATION_HOST,
             'port': DESTINATION_PORT,
-            'db': self.company_id
+            'db': self.company_id,
+            'temp_db': TEMP_DB_FMT.format(db=self.company_id)
         }
 
     def restore_dump(self):
@@ -30,11 +32,25 @@ class Destination(MongoOperations):
     def restore_compress_collection_dump(self):
         super(Destination, self).restore_compressed_collection_dump(self.server, ARCHIVE_DUMP_PATH, "slirevision")
 
+    def restore_to_diff_db(self):
+        super(Destination, self).restore_to_diff_db(self.server, ARCHIVE_DUMP_PATH)
+
+    def insert_from_sql(self):
+        for db, query in QUERY_DB_DICT_DEST.iteritems():
+            print "Started inserting {db} data for company {company_id}".format(db=db, company_id=self.company_id)
+
+            data = SQlAlchemyOperations.get_data_from_raw_query(db, self.company_id)
+            Destination.insert(self.client, db=self.company_id, collection=db, data=data)
+
+            print "Completed inserting {db} data for company {company_id}".format(db=db, company_id=self.company_id)
+
 
 if __name__ == "__main__":
     destination_obj = Destination(13311)
 
+    # destination_obj.insert_from_sql()
     # destination_obj.restore_dump()
     # destination_obj.restore_compressed_dump()
     # destination_obj.restore_collection_dump()
-    destination_obj.restore_compress_collection_dump()
+    # destination_obj.restore_compress_collection_dump()
+    destination_obj.restore_to_diff_db()

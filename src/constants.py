@@ -26,14 +26,32 @@ PRINT_FORMAT = "{message}: {time}"
 FETCH_REV_DP_REGEX = '\<([a-zA-Z]+)_(.*?)\>'
 
 QUERY_DB_DICT = {
-    'slirevision': "SELECT revisiondpid, expression FROM {db}.`{company_id}`",
-    'slilatest': "SELECT revisiondpid, expression FROM {db}.`{company_id}`",
-    'slivaactualslatest': "SELECT revisiondpid FROM {db}.`{company_id}`",
-    'sliconsensuslatest': "SELECT revisiondpid, expression FROM {db}.`{company_id}`",
+    'slirevision': "SELECT revisiondpid, expression FROM {db}.`{company_id}` "
+                   "WHERE revisiondpid IN (7068693365, 7068693366)",
+    'slilatest': "SELECT revisiondpid, expression FROM {db}.`{company_id}` WHERE revisiondpid IN ()",
+    'slivaactualslatest': "SELECT revisiondpid FROM {db}.`{company_id}` WHERE revisiondpid IN ()",
+    'sliconsensuslatest': "SELECT revisiondpid, expression FROM {db}.`{company_id}` WHERE revisiondpid IN ()",
 
-    'sliconsensusrevision': "SELECT revisiondpid, expression, computeinfojson FROM {db}.`{company_id}`",
-    'slivaactualsrevision': "SELECT revisiondpid, expression, computeinfojson FROM {db}.`{company_id}`",
+    'sliconsensusrevision': "SELECT revisiondpid, expression, computeinfojson FROM {db}.`{company_id}` "
+                            "WHERE revisiondpid IN ()",
+    'slivaactualsrevision': "SELECT revisiondpid, expression, computeinfojson FROM {db}.`{company_id}` "
+                            "WHERE revisiondpid IN ()",
 }
+
+QUERY_DB_DICT_DEST = QUERY_DB_DICT = {
+    'slirevision': "SELECT revisiondpid, expression FROM {db}.`{company_id}` "
+                   "WHERE revisiondpid IN (7068693368, 7068693369)",
+    'slilatest': "SELECT revisiondpid, expression FROM {db}.`{company_id}` WHERE revisiondpid IN ()",
+    'slivaactualslatest': "SELECT revisiondpid FROM {db}.`{company_id}` WHERE revisiondpid IN ()",
+    'sliconsensuslatest': "SELECT revisiondpid, expression FROM {db}.`{company_id}` WHERE revisiondpid IN ()",
+
+    'sliconsensusrevision': "SELECT revisiondpid, expression, computeinfojson FROM {db}.`{company_id}` "
+                            "WHERE revisiondpid IN ()",
+    'slivaactualsrevision': "SELECT revisiondpid, expression, computeinfojson FROM {db}.`{company_id}` "
+                            "WHERE revisiondpid IN ()",
+}
+
+TEMP_DB_FMT = "apsli_{db}"
 
 DUMP_PATH = "../dumps"
 DUMP_PATH_FOR_RESTORE = "../dumps/{db}"

@@ -1,4 +1,4 @@
-from constants import QUERY_DB_DICT, SOURCE_HOST, SOURCE_PORT, DUMP_PATH, ARCHIVE_DUMP_PATH
+from constants import QUERY_DB_DICT, SOURCE_HOST, SOURCE_PORT, DUMP_PATH, ARCHIVE_DUMP_PATH, TEMP_DB_FMT
 from models import source_client
 from mongo_operations import MongoOperations
 from sql_alchemy_operations import SQlAlchemyOperations
@@ -13,7 +13,8 @@ class Source(MongoOperations):
         self.server = {
             "host": SOURCE_HOST,
             'port': SOURCE_PORT,
-            'db': self.company_id
+            'db': self.company_id,
+            'temp_db': TEMP_DB_FMT.format(db=self.company_id)
         }
 
     def insert_from_sql(self):
