@@ -9,6 +9,10 @@ class MongoOperations(object):
 
     @staticmethod
     def execute_subprocess_cmd(cmd):
+        """
+        Executes the command using the python subprocess
+        :param cmd: command to be executed
+        """
         try:
             result = subprocess.Popen(cmd)
             result.wait()
@@ -19,6 +23,11 @@ class MongoOperations(object):
 
     @staticmethod
     def create_dump(server, dump_path):
+        """
+        Creates the dump at dump_path for the specified database (db)
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        """
         dump_cmd = [
             "mongodump", "--host", server["host"], "--port", server["port"],
             "--db", server["db"], "--out", dump_path
@@ -28,6 +37,13 @@ class MongoOperations(object):
 
     @staticmethod
     def create_compressed_dump(server, dump_path):
+        """
+        Creates a compressed and archive dump of specified database (db) at the specified dump_path
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        """
+
+        # server["temp_db"] - Name of the dump file
         archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         dump_cmd = [
@@ -39,6 +55,12 @@ class MongoOperations(object):
 
     @staticmethod
     def create_collection_dump(server, dump_path, collection):
+        """
+        Creates the dump of the specified collection at dump_path
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        :param collection: Collection whose dump needs to be created
+        """
         dump_cmd = [
             "mongodump", "--host", server["host"], "--port", server["port"],
             "--db", server["db"], "--collection", collection,
@@ -49,6 +71,13 @@ class MongoOperations(object):
 
     @staticmethod
     def create_compress_collection_dump(server, dump_path, collection):
+        """
+        Creates a compressed and archive dump of specified collection at the specified dump_path
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        :param collection: Collection whose dump needs to be created
+        """
+        # server["temp_db"] - specifies the dump file name
         archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         dump_cmd = [
@@ -61,6 +90,11 @@ class MongoOperations(object):
 
     @staticmethod
     def restore_dump(server, dump_path):
+        """
+        Restore the dump at dump_path on the specified database (db) created using the create_dump method
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        """
         restore_cmd = [
             "mongorestore", "--host", server["host"], "--port", server["port"],
             "--db", server["db"], dump_path
@@ -70,6 +104,12 @@ class MongoOperations(object):
 
     @staticmethod
     def restore_compressed_dump(server, dump_path):
+        """
+        Restore the dump at dump_path on the specified database (db) created using the create_dump method.
+        It restores all the dump from db (nsFrom) to db (nsTo)
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        """
         archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         restore_cmd = [
@@ -81,6 +121,13 @@ class MongoOperations(object):
 
     @staticmethod
     def restore_collection_dump(server, dump_path, collection):
+        """
+        Restores the specified collection from dump_path on the specified database (db)
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        :param collection: Collection which has to be restored
+        """
+
         restore_cmd = [
             "mongorestore", "--host", server["host"], "--port", server["port"],
             "--db", server["db"], "--collection", collection,
@@ -91,6 +138,12 @@ class MongoOperations(object):
 
     @staticmethod
     def restore_compressed_collection_dump(server, dump_path, collection):
+        """
+        Restores the specified collection from dump_path on the specified database (db)
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        :param collection: Collection which has to be restored
+        """
         archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         restore_cmd = [
@@ -103,6 +156,11 @@ class MongoOperations(object):
 
     @staticmethod
     def restore_to_diff_db(server, dump_path):
+        """
+        Restores compress data to a different database
+        :param server: Dict having database details
+        :param dump_path: Path where dump has to be dumped
+        """
         archive_cmd = ARCHIVE_CMD.format(path=dump_path, name=server["temp_db"])
 
         restore_cmd = [
