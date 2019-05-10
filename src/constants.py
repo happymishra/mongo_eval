@@ -47,6 +47,7 @@ TEMP_DB_FMT = "apsli_{db}"
 DUMP_PATH = "../dumps"
 DUMP_PATH_FOR_RESTORE = "../dumps/{db}"
 DUMP_PATH_COLLECTION_FOR_RESTORE = "../dumps/{db}/{collection}.bson"
+NAMESPACE_FMT = "{db}.{collection}"
 
 ARCHIVE_DUMP_PATH = "../archive_dumps"
 ARCHIVE_CMD = "--archive={path}/{name}.archive"

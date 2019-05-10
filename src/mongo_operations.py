@@ -1,5 +1,5 @@
 import subprocess
-from constants import ARCHIVE_CMD
+from constants import ARCHIVE_CMD, NAMESPACE_FMT
 from utils.db_connector import DBConnector
 
 
@@ -179,18 +179,24 @@ class MongoOperations(object):
         MongoOperations.execute_subprocess_cmd(restore_cmd)
 
     @staticmethod
-    def clone_db(client, from_db, to_db):
+    def rename_collection(client, from_db, from_coll, to_db, to_coll):
         """
         Rename or copy collections between databases or same database
+        :param from_coll: From collection name
+        :param to_coll: To collection name
         :param client: Mongo client
         :param from_db: DB from which collection needs to be renamed or copied
         :param to_db: DB to which collection needs to be renamed or copied
         """
         try:
+            from_ns = NAMESPACE_FMT.format(db=from_db, collection=from_coll)
+            to_ns = NAMESPACE_FMT.format(db=to_db, collection=to_coll)
+
             client.admin.command('renameCollection', **{
-                'renameCollection': from_db,
-                'to': to_db
+                'renameCollection': from_ns,
+                'to': to_ns
             })
+
         except Exception as ex:
             print "Error while cloning DB"
             raise Exception(ex)
@@ -226,4 +232,7 @@ class MongoOperations(object):
 
 
 if __name__ == '__main__':
-    MongoOperations.create_dump()
+    from constants import DESTINATION_CLIENT
+
+    MongoOperations.rename_collection(MongoOperations.get_client(DESTINATION_CLIENT), "apsli_13311", "slirevision", "13311",
+                             "sli")
