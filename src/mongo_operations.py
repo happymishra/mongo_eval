@@ -1,11 +1,17 @@
 import subprocess
-
 from constants import ARCHIVE_CMD
+from utils.db_connector import DBConnector
 
 
 class MongoOperations(object):
+    db_connector_obj = DBConnector('', 'config/config.ini')
+
     def __init__(self):
         pass
+
+    @classmethod
+    def get_client(cls, db):
+        return cls.db_connector_obj.get_mongo_client(db)
 
     @staticmethod
     def execute_subprocess_cmd(cmd):
@@ -174,6 +180,12 @@ class MongoOperations(object):
 
     @staticmethod
     def clone_db(client, from_db, to_db):
+        """
+        Rename or copy collections between databases or same database
+        :param client: Mongo client
+        :param from_db: DB from which collection needs to be renamed or copied
+        :param to_db: DB to which collection needs to be renamed or copied
+        """
         try:
             client.admin.command('renameCollection', **{
                 'renameCollection': from_db,

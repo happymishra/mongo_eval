@@ -1,13 +1,3 @@
-import logging
-from ConfigParser import ConfigParser
-from os import path
-
-config = ConfigParser()
-config.read(path.join(path.dirname((path.dirname(__file__))), 'config/config.ini'))
-
-logging.basicConfig(format='%(asctime)s - %(message)s')
-logging.getLogger().setLevel(logging.INFO)
-
 SLI_CON_REV_DB = 'sli_consensus_revision'
 SLI_REV_DB = 'sli_revision'
 SLI_VAACTUALS_DB = 'sli_vaactuals_revision'
@@ -18,10 +8,11 @@ SLI_VAACTUALS_LATEST = 'sli_vaactuals_latest'
 
 SLI_DB = 'sli'
 
+SOURCE_CLIENT = 'mongo_source'
+DESTINATION_CLIENT = 'mongo_dest'
+
 MYSQL_DB_URL = "mysql://{0}:{1}@{2}/{3}"
 MONGO_DB_URL = "mongodb://{0}:{1}/"
-
-PRINT_FORMAT = "{message}: {time}"
 
 FETCH_REV_DP_REGEX = '\<([a-zA-Z]+)_(.*?)\>'
 
@@ -38,7 +29,7 @@ QUERY_DB_DICT = {
                             "WHERE revisiondpid IN ()",
 }
 
-QUERY_DB_DICT_DEST = QUERY_DB_DICT = {
+QUERY_DB_DICT_DEST = {
     'slirevision': "SELECT revisiondpid, expression FROM {db}.`{company_id}` "
                    "WHERE revisiondpid IN (7068693368, 7068693369)",
     'slilatest': "SELECT revisiondpid, expression FROM {db}.`{company_id}` WHERE revisiondpid IN ()",
